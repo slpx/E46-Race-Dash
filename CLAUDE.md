@@ -53,17 +53,21 @@ pio test -e native       # host unit tests (needs gcc/clang on PATH)
 
 Done: prototypes final, hardware selected (Waveshare ESP32-S3-Touch-LCD-7),
 firmware milestone 1 (CAN decode + gear calc + faults + bench sim, 11 unit
-tests passing, builds clean). **Board not yet in hand.**
+tests passing), **milestone 2 UI done** — full LVGL UI (`firmware/src/ui/`)
+with generated Bahnschrift fonts, verified visually via the host snapshot
+harness (`firmware/tools/build_host.py --run` → `firmware/renders/*.bmp`);
+both target and host builds green. **Board not yet in hand.**
 
 Next, roughly in order:
-1. **LVGL UI** translating `prototype/dash-alt.html` to widgets. Can start
-   before hardware using the LVGL PC simulator (SDL) — layout is 800×480 1:1.
-2. On board arrival: verify `firmware/src/board_pins.h` against the Waveshare
-   schematic (all placeholders), display bring-up, brightness test in car.
-3. ADS1115 (oil pressure, battery, turn signals) + MCP2515 (TPMS bus).
-4. In-car capture (SavvyCAN + the DBC) to resolve every `TODO(capture)` in
+1. On board arrival: verify `firmware/src/board_pins.h` against the Waveshare
+   schematic (all placeholders), RGB panel driver glue (esp_lcd RGB +
+   lv_display flush), call ui_create()/ui_set() from main, brightness test.
+2. ADS1115 (oil pressure, battery, turn signals) + MCP2515 (TPMS bus).
+3. In-car capture (SavvyCAN + the DBC) to resolve every `TODO(capture)` in
    `firmware/src/can_ms43.cpp`: MK60 ASC intervention bits, 0x615 ambient
    scaling/sign, 0x1F0 upper-nibble bits, 0x153 speed encoding.
+4. Fuel: `ui.c` has a placeholder sender curve (`TODO: sender curve`) pending
+   the cluster-emulation decision.
 
 ## Open decisions (user)
 

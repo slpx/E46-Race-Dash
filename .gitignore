@@ -1,6 +1,7 @@
 # ESP32 / PlatformIO / ESP-IDF build output (for when firmware lands)
 .pio/
 build/
+firmware/renders/
 sdkconfig.old
 managed_components/
 

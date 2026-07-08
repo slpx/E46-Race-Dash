@@ -30,10 +30,28 @@ attached. Set to `0` for live CAN once the transceiver is wired to the bus.
 
 ## Milestones
 
-1. **CAN decode + sim → serial** ← this code
-2. LVGL UI on the 800×480 panel, layout per `../prototype/dash-alt.html`
+1. **CAN decode + sim → serial** — done
+2. **LVGL UI** (layout per `../prototype/dash-alt.html`) — done, verified via
+   host snapshots; remaining: RGB panel driver glue on real hardware
 3. ADS1115 (oil pressure, battery, turn signals) + MCP2515 (TPMS bus)
 4. In-car: verify `TODO(capture)` items in `can_ms43.cpp`, brightness test
+
+## UI without hardware
+
+The UI (`src/ui/`) is plain LVGL and renders on a PC into BMP snapshots:
+
+```
+pip install ziglang pillow
+pio run -e dash                      # fetches LVGL into .pio/libdeps
+python tools/build_host.py --run     # builds host harness, writes renders/*.bmp
+```
+
+Scenarios: cold start (blue temps), race (LEDs + zones), ABS event (yellow
+flash), triple-fault (banner cycling CHECK ENGINE / OIL PRESSURE / TIRE FR).
+
+Fonts are generated from Windows' Bahnschrift (the prototype's face) by
+`tools/gen_fonts.py` (LVGL fmt_txt, bpp4) into `src/ui/fonts/` — committed,
+so regeneration is only needed when sizes/charsets change.
 
 ## Notes
 
