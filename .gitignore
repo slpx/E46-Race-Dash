@@ -1,0 +1,10 @@
+# ESP32 / PlatformIO / ESP-IDF build output (for when firmware lands)
+.pio/
+build/
+sdkconfig.old
+managed_components/
+
+# Editors / OS
+.vscode/
+Thumbs.db
+.DS_Store

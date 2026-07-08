@@ -1,0 +1,551 @@
+<title>E46 Race Dash — Alt: Tires</title>
+<style>
+  /* Page surround (not the device) — both themes */
+  :root {
+    --page-bg: #e9eaec;
+    --page-fg: #24262b;
+    --page-dim: #6b6f78;
+    --btn-bg: #ffffff;
+    --btn-border: #c6c9cf;
+    --btn-fg: #24262b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page-bg: #17181b;
+      --page-fg: #d6d8dc;
+      --page-dim: #82868f;
+      --btn-bg: #212328;
+      --btn-border: #3a3d44;
+      --btn-fg: #d6d8dc;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #17181b; --page-fg: #d6d8dc; --page-dim: #82868f;
+    --btn-bg: #212328; --btn-border: #3a3d44; --btn-fg: #d6d8dc;
+  }
+  :root[data-theme="light"] {
+    --page-bg: #e9eaec; --page-fg: #24262b; --page-dim: #6b6f78;
+    --btn-bg: #ffffff; --btn-border: #c6c9cf; --btn-fg: #24262b;
+  }
+
+  /* Dash screen palette — deliberately single-theme: it's a device */
+  :root {
+    --scr-bg: #050607;
+    --scr-fg: #f2f3ef;
+    --scr-dim: #585c64;
+    --scr-line: #212429;
+    --cup-yellow: #ffc400;
+    --alert-red: #ff2617;
+    --led-green: #2ee04e;
+    --cold-blue: #4aa8ff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--page-fg);
+    font-family: "Bahnschrift", "Segoe UI", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 16px 40px;
+    min-height: 100vh;
+  }
+
+  h1 { font-size: 15px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin: 0; }
+  h1 span { color: var(--page-dim); font-weight: 400; }
+
+  /* ── Device bezel + screen ─────────────────────────────── */
+  .device {
+    width: min(100%, 980px);
+    background: #0c0d0f;
+    border-radius: 14px;
+    padding: clamp(8px, 1.8vw, 18px);
+    box-shadow: 0 14px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .screen {
+    container-type: inline-size;
+    aspect-ratio: 5 / 3;                 /* 800 × 480 panel */
+    background: var(--scr-bg);
+    color: var(--scr-fg);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    display: grid;
+    grid-template-rows: 9% 10.5% 1fr 10.5%;
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+
+  /* ── Shift LEDs ────────────────────────────────────────── */
+  .leds {
+    display: flex; align-items: center; justify-content: center;
+    gap: 2.4cqw; padding-top: 1.4cqw;
+  }
+  .led {
+    width: 2.6cqw; height: 2.6cqw; border-radius: 50%;
+    background: #17191c; border: 1px solid #26292e;
+  }
+  .led.g.on { background: var(--led-green);  box-shadow: 0 0 1.2cqw var(--led-green); border-color: transparent; }
+  .led.y.on { background: var(--cup-yellow); box-shadow: 0 0 1.2cqw var(--cup-yellow); border-color: transparent; }
+  .led.r.on { background: var(--alert-red);  box-shadow: 0 0 1.2cqw var(--alert-red); border-color: transparent; }
+  .screen.flash-shift .led.on { animation: ledblink .12s steps(2) infinite; }
+  @keyframes ledblink { 50% { filter: brightness(.25); box-shadow: none; } }
+
+  /* ── RPM bar ───────────────────────────────────────────── */
+  .rpmrow { display: flex; align-items: stretch; gap: 2cqw; padding: .8cqw 2.4cqw 0; }
+  .rpmbar {
+    flex: 1; position: relative;
+    background: #101215; border: 1px solid var(--scr-line);
+  }
+  .rpmfill {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg,
+      #e6e7e3 0 78.5%,               /* to 5500 */
+      var(--cup-yellow) 78.5% 92.8%, /* 5500–6500 */
+      var(--alert-red) 92.8%);       /* redline */
+    clip-path: inset(0 100% 0 0);
+  }
+  .rpmtick {
+    position: absolute; top: 0; bottom: 0; width: 1px;
+    background: #3a3e45;
+  }
+  .rpmtick i {
+    position: absolute; bottom: .2cqw; left: .5cqw;
+    font-style: normal; font-size: 1.7cqw; color: var(--scr-dim);
+  }
+  .rpmnum { display: flex; align-items: baseline; gap: 1.2cqw; min-width: 17cqw; justify-content: flex-end; }
+  .rpmnum .lbl { font-size: 1.9cqw; color: var(--scr-dim); letter-spacing: .12em; }
+  .rpmnum .val { font-size: 4.6cqw; font-weight: 700; line-height: 1; }
+
+  /* ── Main grid ─────────────────────────────────────────── */
+  .main {
+    display: grid;
+    grid-template-columns: 19% 1fr 1fr 15%;
+    border-top: 1px solid var(--scr-line);
+    min-height: 0;
+  }
+  .col { display: grid; grid-auto-rows: 1fr; min-height: 0; }
+  .col.left  { border-right: 1px solid var(--scr-line); }
+  .col.right { border-left: 1px solid var(--scr-line); grid-template-rows: 1fr 1fr 1fr; }
+
+  .cell {
+    padding: 1.2cqw 1.6cqw;
+    display: flex; flex-direction: column; min-height: 0;
+    border-bottom: 1px solid var(--scr-line);
+  }
+  .col .cell:last-child { border-bottom: none; }
+  .cell .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .cell .name { font-size: 2cqw; letter-spacing: .14em; color: var(--scr-dim); }
+  .cell .unit { font-size: 1.8cqw; color: var(--scr-dim); }
+  .cell .val  { font-size: 5.6cqw; font-weight: 700; line-height: 1; margin: auto 0 .4cqw; text-align: center; }
+
+  .cell.warn      { background: var(--alert-red); }
+  .cell.warn .val { color: #050607; }
+  .cell.warn .name, .cell.warn .unit { color: rgba(0,0,0,.65); }
+  .cell.cold .val { color: var(--cold-blue); }
+
+  .hero {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 0; position: relative;
+  }
+  .hero .val  { font-weight: 700; line-height: .9; }
+  .hero .name { font-size: 2.2cqw; letter-spacing: .2em; color: var(--scr-dim); margin-top: .6cqw; }
+
+  /* Combined gear + speed */
+  .hero.combo { border-right: 1px solid var(--scr-line); }
+  .hero.combo .gearv  { font-size: 20cqw; }
+  .hero.combo .speedv { font-size: 9cqw; margin-top: 1.2cqw; }
+
+  /* Tire pressures, laid out like the car (nose up) */
+  .hero.tires { padding: 1.6cqw; }
+  .tiregrid {
+    flex: 1; width: 100%; min-height: 0;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+  }
+  .tire {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .4cqw;
+  }
+  .tire:nth-child(1), .tire:nth-child(3) { border-right: 1px solid var(--scr-line); }
+  .tire:nth-child(1), .tire:nth-child(2) { border-bottom: 1px solid var(--scr-line); }
+  .tire .pos { font-size: 1.8cqw; letter-spacing: .16em; color: var(--scr-dim); }
+  .tire .tv  { font-size: 6cqw; font-weight: 700; line-height: 1; }
+  .tire.warn { background: var(--alert-red); }
+  .tire.warn .tv { color: #050607; }
+  .tire.warn .pos { color: rgba(0,0,0,.65); }
+
+  /* ABS box */
+  .cell.abs { align-items: center; justify-content: center; }
+  .cell.abs .tag {
+    font-size: 3.4cqw; font-weight: 700; letter-spacing: .18em;
+    color: #303339;
+  }
+  .cell.abs.active { animation: absflash .2s steps(2) infinite; }
+  .cell.abs.active .tag { color: #050607; }
+  @keyframes absflash { 0%, 49% { background: var(--cup-yellow); } 50%, 100% { background: #141518; } }
+  .cell.abs.fault { background: var(--alert-red); animation: none; }
+  .cell.abs.fault .tag { color: #050607; }
+
+  /* ── Bottom strip ──────────────────────────────────────── */
+  .bottom {
+    position: relative;
+    border-top: 1px solid var(--scr-line);
+    display: flex; align-items: center; gap: 3cqw;
+    padding: 0 2.4cqw; font-size: 2cqw;
+  }
+  .tps { display: flex; align-items: center; gap: 1.2cqw; flex: 1; max-width: 34cqw; }
+  .tps .lbl { color: var(--scr-dim); letter-spacing: .12em; }
+  .tpsbar { flex: 1; height: 2.4cqw; background: #101215; border: 1px solid var(--scr-line); position: relative; }
+  .tpsfill { position: absolute; inset: 0; background: #e6e7e3; clip-path: inset(0 100% 0 0); }
+  .tps .pct { min-width: 6cqw; text-align: right; }
+
+  .brk { letter-spacing: .12em; color: #303339; font-weight: 700; }
+  .brk.on { color: var(--alert-red); }
+
+  .amb { margin-left: auto; display: flex; align-items: baseline; gap: 1.2cqw; }
+  .amb .lbl { color: var(--scr-dim); letter-spacing: .12em; }
+  .amb .val { font-size: 2.6cqw; font-weight: 700; }
+
+  /* Fault banner — takes over the bottom strip, never the main display */
+  .fbanner {
+    position: absolute; inset: 0; z-index: 3;
+    display: none; align-items: center; justify-content: center;
+    background: var(--alert-red); color: #050607;
+    font-size: 3.4cqw; font-weight: 700; letter-spacing: .18em;
+    animation: bannerflash .3s steps(2) infinite;
+  }
+  .fbanner.on { display: flex; }
+  @keyframes bannerflash { 50% { background: #3c0805; color: var(--alert-red); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screen.flash-shift .led.on, .cell.abs.active, .fbanner { animation: none; }
+    .cell.abs.active { background: var(--cup-yellow); }
+  }
+
+  /* ── Controls ─────────────────────────────────────────── */
+  .controls {
+    width: min(100%, 980px);
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  .controls .note { font-size: 12px; color: var(--page-dim); width: 100%; }
+  button {
+    font: 600 13px/1 "Bahnschrift", "Segoe UI", Arial, sans-serif;
+    letter-spacing: .04em;
+    background: var(--btn-bg); color: var(--btn-fg);
+    border: 1px solid var(--btn-border); border-radius: 6px;
+    padding: 9px 14px; cursor: pointer;
+  }
+  button:hover { border-color: var(--page-dim); }
+  button:focus-visible { outline: 2px solid var(--cup-yellow); outline-offset: 1px; }
+  button.on { background: var(--cup-yellow); color: #111; border-color: var(--cup-yellow); }
+</style>
+
+<h1>E46 Race Dash <span>· alt layout: combined gear/speed + tire pressures</span></h1>
+
+<div class="device">
+  <div class="screen" id="screen">
+    <div class="leds" id="leds"></div>
+
+    <div class="rpmrow">
+      <div class="rpmbar" id="rpmbar"><div class="rpmfill" id="rpmfill"></div></div>
+      <div class="rpmnum"><span class="lbl">RPM</span><span class="val" id="rpmVal">0</span></div>
+    </div>
+
+    <div class="main">
+      <div class="col left">
+        <div class="cell" id="waterCell">
+          <div class="head"><span class="name">WATER</span><span class="unit">°F</span></div>
+          <div class="val" id="waterVal">–</div>
+        </div>
+        <div class="cell" id="oiltCell">
+          <div class="head"><span class="name">OIL T</span><span class="unit">°F</span></div>
+          <div class="val" id="oiltVal">–</div>
+        </div>
+        <div class="cell" id="oilpCell">
+          <div class="head"><span class="name">OIL P</span><span class="unit">psi</span></div>
+          <div class="val" id="oilpVal">–</div>
+        </div>
+      </div>
+
+      <div class="hero combo">
+        <div class="val gearv" id="gearVal">N</div>
+        <div class="val speedv" id="speedVal">0</div>
+        <div class="name">SPEED</div>
+      </div>
+
+      <div class="hero tires">
+        <div class="tiregrid">
+          <div class="tire" id="tireFL"><span class="pos">FL</span><span class="tv">–</span></div>
+          <div class="tire" id="tireFR"><span class="pos">FR</span><span class="tv">–</span></div>
+          <div class="tire" id="tireRL"><span class="pos">RL</span><span class="tv">–</span></div>
+          <div class="tire" id="tireRR"><span class="pos">RR</span><span class="tv">–</span></div>
+        </div>
+        <div class="name">TIRES psi</div>
+      </div>
+
+      <div class="col right">
+        <div class="cell abs" id="absBox"><span class="tag">ABS</span></div>
+        <div class="cell">
+          <div class="head"><span class="name">BATT</span><span class="unit">V</span></div>
+          <div class="val" id="battVal" style="font-size:4.4cqw">–</div>
+        </div>
+        <div class="cell" id="fuelCell">
+          <div class="head"><span class="name">FUEL</span><span class="unit">gal</span></div>
+          <div class="val" id="fuelVal" style="font-size:4.4cqw">–</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="tps">
+        <span class="lbl">TPS</span>
+        <div class="tpsbar"><div class="tpsfill" id="tpsfill"></div></div>
+        <span class="pct" id="tpsVal">0%</span>
+      </div>
+      <span class="brk" id="brk">BRK</span>
+      <div class="amb"><span class="lbl">AMB</span><span class="val" id="ambVal">–</span></div>
+      <div class="fbanner" id="fbanner">CHECK ENGINE</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="controls">
+  <button id="btnPause">Pause</button>
+  <button id="btnAbsEvent">ABS event</button>
+  <button id="btnAbsFault">ABS fault</button>
+  <button id="btnOilP">Oil-pressure drop</button>
+  <button id="btnOverheat">Overheat</button>
+  <button id="btnCEL">CEL</button>
+  <button id="btnEML">EML</button>
+  <button id="btnCHG">Charge fault</button>
+  <button id="btnLeak">Tire leak (FR)</button>
+  <span class="note">Sim laps a circuit on its own: full throttle, brake zones (watch for ABS flutter), corners.
+  Temps start cold (blue) and warm up; tires build ~4 psi with heat. All faults feed the flashing banner
+  at the bottom — turn several on to see it cycle. Critical channels also invert their own box to red.</span>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ── Vehicle model (E46 330i-ish) ─────────────────────────
+  const RATIOS = [4.23, 2.52, 1.66, 1.22, 1.00];
+  const FINAL = 3.38;
+  const MPH_K = 0.0742;                     // mph per rpm / (gear*final)
+  const REDLINE = 6500, SHIFT_UP = 6350, SHIFT_DOWN = 3000, RPM_MAX = 7000;
+  const mph = (rpm, g) => rpm * MPH_K / (RATIOS[g] * FINAL);
+  const rpmFromMph = (v, g) => v * (RATIOS[g] * FINAL) / MPH_K;
+  const ACCEL_RPM_S = [3300, 2450, 1750, 1250, 950]; // rpm/s at full throttle per gear
+
+  // ── Track script: what the sim "driver" does ────────────
+  const SCRIPT = [
+    { m: 'accel', t: 5.5 },
+    { m: 'brake', t: 2.1 },
+    { m: 'hold',  t: 1.6, tps: 35 },
+    { m: 'accel', t: 3.8 },
+    { m: 'brake', t: 1.4 },
+    { m: 'hold',  t: 2.2, tps: 55 },
+    { m: 'accel', t: 7.5 },
+    { m: 'brake', t: 2.6 },
+    { m: 'hold',  t: 1.3, tps: 25 },
+  ];
+
+  const S = {
+    rpm: 1100, gear: 1, tps: 0, brake: false,
+    water: 46, oilT: 38, oilP: 2.0, batt: 13.8, fuel: 12.4, amb: 23.5,
+    tires: { FL: 30.4, FR: 30.7, RL: 30.2, RR: 30.5 },   // psi, cold set
+    leakFR: false,
+    seg: 0, segT: 0, t: 0, paused: false,
+    absActiveUntil: 0, absFault: false,
+    demoOilP: false, demoOverheat: false,
+    faultCEL: false, faultEML: false, faultCHG: false,
+  };
+
+  const degF = c => c * 9 / 5 + 32;
+  const psi = bar => bar * 14.5;
+
+  // ── DOM ──────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const el = {
+    screen: $('screen'), rpmfill: $('rpmfill'), rpmVal: $('rpmVal'),
+    gear: $('gearVal'), speed: $('speedVal'),
+    water: $('waterVal'), oilt: $('oiltVal'), oilp: $('oilpVal'), batt: $('battVal'),
+    waterCell: $('waterCell'), oiltCell: $('oiltCell'), oilpCell: $('oilpCell'),
+    abs: $('absBox'), tpsfill: $('tpsfill'), tpsVal: $('tpsVal'), brk: $('brk'),
+    fuel: $('fuelVal'), fuelCell: $('fuelCell'), fbanner: $('fbanner'), amb: $('ambVal'),
+    tires: { FL: $('tireFL'), FR: $('tireFR'), RL: $('tireRL'), RR: $('tireRR') },
+  };
+
+  // Shift LEDs: 15, lighting 4800 → 6400, all flash past 6450
+  const ledBar = $('leds');
+  const leds = [];
+  for (let i = 0; i < 15; i++) {
+    const d = document.createElement('span');
+    d.className = 'led ' + (i < 5 ? 'g' : i < 10 ? 'y' : 'r');
+    ledBar.appendChild(d); leds.push(d);
+  }
+  // RPM bar ticks each 1000
+  const bar = $('rpmbar');
+  for (let k = 1; k < 7; k++) {
+    const t = document.createElement('div');
+    t.className = 'rpmtick';
+    t.style.left = (k / 7 * 100) + '%';
+    t.innerHTML = '<i>' + k + '</i>';
+    bar.appendChild(t);
+  }
+
+  // ── Simulation step ──────────────────────────────────────
+  function step(dt) {
+    S.t += dt; S.segT += dt;
+    const seg = SCRIPT[S.seg];
+    if (S.segT >= seg.t) { S.seg = (S.seg + 1) % SCRIPT.length; S.segT = 0; }
+
+    S.brake = seg.m === 'brake';
+    const tpsTarget = seg.m === 'accel' ? 100 : seg.m === 'brake' ? 0 : seg.tps;
+    S.tps += (tpsTarget - S.tps) * Math.min(1, dt * 12);
+
+    if (seg.m === 'accel') {
+      S.rpm += ACCEL_RPM_S[S.gear - 1] * dt;
+      if (S.rpm >= SHIFT_UP && S.gear < 5) {
+        const v = mph(S.rpm, S.gear - 1);
+        S.gear++; S.rpm = rpmFromMph(v, S.gear - 1);
+      }
+      S.rpm = Math.min(S.rpm, REDLINE + 80);
+    } else if (seg.m === 'brake') {
+      let v = mph(S.rpm, S.gear - 1) - 22 * dt;      // heavy braking
+      v = Math.max(v, 28);
+      S.rpm = rpmFromMph(v, S.gear - 1);
+      if (S.rpm < SHIFT_DOWN && S.gear > 2) {         // downshift w/ auto rev-match
+        S.gear--; S.rpm = rpmFromMph(v, S.gear - 1);
+      }
+      // ABS flutter chance under hard braking at speed
+      if (!S.absFault && v > 55 && Math.random() < dt * 0.9) {
+        S.absActiveUntil = S.t + 0.35 + Math.random() * 0.7;
+      }
+    } else {
+      S.rpm += 90 * dt * (S.tps / 50);
+      S.rpm = Math.min(S.rpm, SHIFT_UP - 200);
+    }
+    S.rpm = Math.max(S.rpm, 1050);
+
+    // Slow channels
+    const waterTarget = S.demoOverheat ? 109 : 95 + 2.5 * Math.sin(S.t / 19);
+    S.water += (waterTarget - S.water) * Math.min(1, dt * (S.demoOverheat ? 0.25 : 0.05));
+    const oilTarget = 111 + 3 * Math.sin(S.t / 27);
+    S.oilT += (oilTarget - S.oilT) * Math.min(1, dt * 0.04);
+    const pBase = S.demoOilP ? 0.75 : 1.15 + (S.rpm / REDLINE) * 3.3 - (S.oilT - 100) * 0.006;
+    S.oilP += (pBase + (Math.random() - 0.5) * 0.06 - S.oilP) * Math.min(1, dt * 8);
+    const battTarget = (S.faultCHG ? 12.1 : 13.78) + 0.06 * Math.sin(S.t / 7);
+    S.batt += (battTarget + (Math.random() - 0.5) * 0.02 - S.batt) * Math.min(1, dt * 4);
+
+    // Fuel burn: roughly load-proportional, ~gal/hr scaled to demo time
+    S.fuel = Math.max(0, S.fuel - (0.5 + S.tps / 18) * dt / 360);
+
+    S.amb = 23.5 + 0.6 * Math.sin(S.t / 41);   // ambient drifts slowly
+
+    // Tires build ~4 psi with heat; fronts a touch more (this car pushes)
+    const build = 4 * (1 - Math.exp(-S.t / 90));
+    for (const k of Object.keys(S.tires)) {
+      let target = { FL: 30.4, FR: 30.7, RL: 30.2, RR: 30.5 }[k]
+                 + build * (k[0] === 'F' ? 1.08 : 1)
+                 + 0.15 * Math.sin(S.t / 13 + k.charCodeAt(1));
+      if (S.leakFR && k === 'FR') target = 18;
+      const rate = (S.leakFR && k === 'FR') ? 0.12 : 0.03;
+      S.tires[k] += (target - S.tires[k]) * Math.min(1, dt * rate * 10);
+    }
+  }
+
+  // ── Faults: cycling banner at the bottom of the display ──
+  function activeFaults() {
+    const f = [];
+    if (S.oilP < 1.4 && S.rpm > 3000) f.push('OIL PRESSURE');
+    if (S.water >= 106) f.push('OVERHEAT');
+    if (S.faultCEL) f.push('CHECK ENGINE');
+    if (S.faultEML) f.push('EML');
+    if (S.faultCHG || S.batt < 12.6) f.push('CHARGE');
+    if (S.absFault) f.push('ABS FAULT');
+    const low = Object.entries(S.tires).filter(([, p]) => p < 26).map(([k]) => k);
+    if (low.length) f.push('TIRE ' + low.join(' '));
+    return f;
+  }
+
+  // ── Render ───────────────────────────────────────────────
+  function render() {
+    const rpm = Math.round(S.rpm / 10) * 10;
+    el.rpmVal.textContent = rpm;
+    el.rpmfill.style.clipPath = 'inset(0 ' + Math.max(0, 100 - S.rpm / RPM_MAX * 100).toFixed(2) + '% 0 0)';
+
+    const lit = Math.floor((S.rpm - 4800) / ((6400 - 4800) / 15));
+    leds.forEach((d, i) => d.classList.toggle('on', i < lit));
+    el.screen.classList.toggle('flash-shift', S.rpm >= 6450);
+
+    el.gear.textContent = S.gear;
+    el.speed.textContent = Math.round(mph(S.rpm, S.gear - 1));
+
+    el.water.textContent = Math.round(degF(S.water));
+    el.oilt.textContent = Math.round(degF(S.oilT));
+    el.oilp.textContent = Math.round(psi(S.oilP));
+    el.batt.textContent = S.batt.toFixed(1);
+    el.fuel.textContent = S.fuel.toFixed(1);
+
+    el.waterCell.classList.toggle('warn', S.water >= 103);       // ≥ 217 °F
+    el.waterCell.classList.toggle('cold', S.water < 71);         // < 160 °F
+    el.oiltCell.classList.toggle('warn', S.oilT >= 128);         // ≥ 262 °F
+    el.oiltCell.classList.toggle('cold', S.oilT < 60);           // < 140 °F
+    el.oilpCell.classList.toggle('warn', S.oilP < 1.8 && S.rpm > 2500);
+    el.fuelCell.classList.toggle('warn', S.fuel < 2);
+
+    el.tpsfill.style.clipPath = 'inset(0 ' + (100 - S.tps).toFixed(1) + '% 0 0)';
+    el.tpsVal.textContent = Math.round(S.tps) + '%';
+    el.brk.classList.toggle('on', S.brake);
+    el.amb.textContent = Math.round(degF(S.amb)) + '°';
+
+    for (const [k, cell] of Object.entries(el.tires)) {
+      const p = S.tires[k];
+      cell.querySelector('.tv').textContent = p.toFixed(1);
+      cell.classList.toggle('warn', p < 26 || p > 42);
+    }
+
+    el.abs.classList.toggle('fault', S.absFault);
+    el.abs.classList.toggle('active', !S.absFault && S.t < S.absActiveUntil);
+
+    const faults = activeFaults();
+    if (faults.length) {
+      el.fbanner.textContent = faults[Math.floor(S.t / 1.4) % faults.length];
+      el.fbanner.classList.add('on');
+    } else {
+      el.fbanner.classList.remove('on');
+    }
+  }
+
+  // ── Loop ─────────────────────────────────────────────────
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (!S.paused) { step(dt); render(); }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ── Interactions ─────────────────────────────────────────
+  const toggle = (btn, fn) => btn.addEventListener('click', () => {
+    btn.classList.toggle('on');
+    fn(btn.classList.contains('on'));
+  });
+  toggle($('btnPause'),    on => S.paused = on);
+  toggle($('btnAbsFault'), on => S.absFault = on);
+  toggle($('btnOilP'),     on => S.demoOilP = on);
+  toggle($('btnOverheat'), on => { S.demoOverheat = on; if (!on) S.water = 95; });
+  toggle($('btnCEL'),      on => S.faultCEL = on);
+  toggle($('btnEML'),      on => S.faultEML = on);
+  toggle($('btnCHG'),      on => S.faultCHG = on);
+  toggle($('btnLeak'),     on => S.leakFR = on);
+  $('btnAbsEvent').addEventListener('click', () => { S.absActiveUntil = S.t + 1.6; });
+})();
+</script>
