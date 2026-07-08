@@ -62,21 +62,7 @@ at the instrument cluster connector or the DME harness.
 
 ## Bill of materials
 
-| Item | Part | ~Cost | Notes |
-|---|---|---|---|
-| Display/MCU | Waveshare ESP32-S3-Touch-LCD-7 | $50 | Core of the build |
-| Power | Pololu D36V28F5 buck (4.5–50V in, 5V 3.2A) | $13 | 50V input ceiling survives load dump |
-| Input protection | SMBJ33A TVS, inline fuse (2A), reverse diode | $3 | At the 12V entry |
-| 2nd CAN | MCP2515 + TJA1050 module (8 MHz crystal) | $5 | For TPMS; note crystal freq for driver config |
-| ADC | ADS1115 module (16-bit, 4ch, I2C) | $6 | Oil pressure, battery, turn signals |
-| Oil pressure sender | AEM 30-2131-100 (0–100 psi, 0.5–4.5V) or equiv | $60 | Ratiometric 5V; 1/8" NPT |
-| Dividers/protection | Resistors, zeners, 100 nF caps | $3 | Battery + turn signal + sender scaling |
-| Shift LEDs (optional) | WS2812B stick ×15 + 74AHCT125 level shifter | $10 | Physical LEDs above screen, Cup style |
-| TPMS | User-selected external CAN TPMS (e.g. IZZE-Racing class) | TBD | Frame IDs/scaling → this doc when chosen |
-| Enclosure | 3D-printed ASA/PETG, MXP-style + glare hood | $10 | Model around 192×105 board |
-| Harness | Deutsch DTM connector, TXL wire, loom | $30 | One connector to the car |
-
-Total (excl. TPMS): **~$190** — against ~$1,700 for an MXP.
+Moved to the dedicated shopping list: **[BOM.md](BOM.md)** (~$195 excl. TPMS).
 
 ## Open items to verify on hardware arrival
 
